@@ -1,0 +1,80 @@
+version: '3'
+services:
+  backend:
+    container_name: gquest-backend
+    volumes: 
+      - "./backend/src:/var/www/html"
+      - "./backend/logs/apache2:/var/log/apache2/"
+      - "./backend/config/app.conf:/etc/apache2/sites-available/000-default.conf"
+    build:
+      context: ./backend
+    ports:
+      - "7000:80"
+    networks:
+      - app-network
+
+  frontend:
+    container_name: gquest-frontend
+    build:
+      context: ./frontend
+    ports:
+      - "7001:7001"
+    command: >
+      sh -c "yarn && yarn dev --host"
+    volumes:
+      - ./frontend/src:/app
+    networks:
+      - app-network
+
+  db:
+    container_name: gquest-db
+    image: mysql:8.0
+    volumes:
+      - db-store:/var/lib/mysql
+      # - ./db/init:/docker-entrypoint-initdb.d
+      - ./db/logs:/var/log/mysql
+      - ./db/my.cnf:/etc/mysql/conf.d/my.cnf
+    environment:
+      MYSQL_DATABASE: ${DB_NAME}
+      MYSQL_USER: ${DB_USER}
+      MYSQL_PASSWORD: ${DB_PASS}
+      MYSQL_ROOT_PASSWORD: ${DB_PASS}
+      TZ: ${TZ}
+    ports:
+      - ${DB_PORT}:3306
+    networks:
+      - app-network
+
+  db-testing:
+    container_name: gquest-db-testing
+    image: mysql:8.0
+    volumes:
+      - ./db_testing/my.cnf:/etc/mysql/conf.d/my.cnf
+      - ./db_testing/init:/docker-entrypoint-initdb.d
+    tmpfs:
+      - /var/lib/mysql
+      - /var/log/mysql
+    environment:
+      MYSQL_DATABASE: ${DB_NAME}
+      MYSQL_USER: ${DB_USER}
+      MYSQL_PASSWORD: ${DB_PASS}
+      MYSQL_ROOT_PASSWORD: ${DB_PASS}
+      TZ: ${TZ}
+    networks:
+      - app-network
+  rproxy:
+    image: nginx
+    volumes:
+      - ./rproxy/nginx.conf:/etc/nginx/nginx.conf
+    ports:
+      - 3333:80
+    networks:
+      - app-network
+
+
+networks:
+  app-network:
+    driver: bridge
+
+volumes:
+  db-store:

@@ -1,0 +1,6 @@
+[submodule "backend/src"]
+	path = backend/src
+	url = git@github.com:wasuken/gquest-backend.git
+[submodule "frontend/src"]
+	path = frontend/src
+	url = git@github.com:wasuken/gquest-front.git
